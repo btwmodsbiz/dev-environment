@@ -2,7 +2,7 @@
 
 VERIFY OTHER 2>nul
 SETLOCAL ENABLEDELAYEDEXPANSION
-IF NOT ERRORLEVEL 0 (
+IF NOT %ERRORLEVEL% == 0 (
 	echo Failed to enable delayed expansion. Possibly an old version of CMD.exe.
 )
 
@@ -12,7 +12,8 @@ REM ====================================
 
 set SCRIPTDIR=%~dp0
 cd "%SCRIPTDIR%"
-if NOT ERRORLEVEL 0 (
+if NOT %ERRORLEVEL% == 0 (
+	echo.
 	echo Could not change directory to script dir.
 	goto failed
 )
@@ -146,6 +147,7 @@ set JARTEMPDIR=%TEMPDIR%\createjar-%TYPE%
 if NOT EXIST "%TEMPDIR%" (
 	mkdir "%TEMPDIR%" >NUL
 	if NOT EXIST "%TEMPDIR%" (
+		echo.
 		echo ERROR: Could not create the temp directory at: %TEMPDIR%
 		goto failed
 	)
@@ -154,6 +156,7 @@ if NOT EXIST "%TEMPDIR%" (
 if EXIST "%JARTEMPDIR%" (
 	rmdir /Q /S "%JARTEMPDIR%" >NUL
 	if EXIST "%JARTEMPDIR%" (
+		echo.
 		echo ERROR: Could not delete the temp directory at: %JARTEMPDIR%
 		goto failed
 	)
@@ -161,12 +164,14 @@ if EXIST "%JARTEMPDIR%" (
 
 mkdir "%JARTEMPDIR%" >NUL
 if NOT EXIST "%JARTEMPDIR%" (
+	echo.
 	echo ERROR: Could not create the temp directory at: %JARTEMPDIR%
 	goto failed
 )
 
 mkdir "%JARTEMPDIR%\btw" >NUL
 if NOT EXIST "%JARTEMPDIR%\btw" (
+	echo.
 	echo ERROR: Could not create directory within temp directory at: %JARTEMPDIR%\btw
 	goto failed
 )
@@ -178,12 +183,16 @@ REM ====================================
 if "%TYPE%" == "server" (
 	echo Copying fresh Minecraft server jar...
 	copy /V /Y "%MCSERVER%" "%MCPJARS%\" >NUL
-	if NOT ERRORLEVEL 0 goto failed
+	if NOT %ERRORLEVEL% == 0 goto failed
 )
 if "%TYPE%" == "client" (
-	echo Copying fresh Minecraft %TYPE% bin directory...
+	echo Copying fresh Minecraft client bin directory...
 	xcopy /E /V /Y "%MCBIN%" "%MCPJARS%\bin\" >NUL
-	if NOT ERRORLEVEL 0 goto failed
+	if NOT %ERRORLEVEL% == 0 goto failed
+
+	echo Copying fresh Minecraft resources directory...
+	xcopy /E /V /Y "%MCRESOURCES%" "%MCPJARS%\resources\" >NUL
+	if NOT %ERRORLEVEL% == 0 goto failed
 )
 REM ====================================
 REM Extract BTW.
@@ -191,19 +200,22 @@ REM ====================================
 
 echo Extracting BTW zip...
 "%ZIP%" x -o"%JARTEMPDIR%\btw" "%SCRIPTDIR%\%BTW%" > "%JARTEMPDIR%\extracting-btw.out" 2>&1
-if NOT ERRORLEVEL 0 (
+if NOT %ERRORLEVEL% == 0 (
+	echo.
 	echo FAILED: See %JARTEMPDIR%\extracting-btw.out
 	goto failed
 )
 
 if "%TYPE%" == "server" (
 	if NOT EXIST "%JARTEMPDIR%\btw\MINECRAFT_SERVER-JAR" (
+		echo.
 		echo ERROR: BTW zip does not seem to contain the MINECRAFT_SERVER-JAR directory.
 		goto failed
 	)
 )
 if "%TYPE%" == "client" (
 	if NOT EXIST "%JARTEMPDIR%\btw\MINECRAFT-JAR" (
+		echo.
 		echo ERROR: BTW zip does not seem to contain the MINECRAFT-JAR directory.
 		goto failed
 	)
@@ -216,29 +228,33 @@ REM ====================================
 if "%TYPE%" == "server" (
 	echo Adding BTW files to minecraft_server.jar...
 	"%ZIP%" a -tzip "%MCPJARS%\minecraft_server.jar" "%JARTEMPDIR%\btw\MINECRAFT_SERVER-JAR\*" > "%JARTEMPDIR%\adding-to-archive.out" 2>&1
-	if NOT ERRORLEVEL 0 (
+	if NOT %ERRORLEVEL% == 0 (
+		echo.
 		echo FAILED: See %JARTEMPDIR%\adding-to-archive.out
 		goto failed
 	)
 	
 	echo Removing META-INF from minecraft_server.jar...
 	"%ZIP%" d -tzip "%MCPJARS%\minecraft_server.jar" META-INF > "%JARTEMPDIR%\removing-meta-inf.out" 2>&1
-	if NOT ERRORLEVEL 0 (
+	if NOT %ERRORLEVEL% == 0 (
+		echo.
 		echo FAILED: See %JARTEMPDIR%\removing-meta-inf.out
 		goto failed
 	)
 )
 if "%TYPE%" == "client" (
 	echo Adding BTW files to minecraft.jar...
-	"%ZIP%" a -tzip "%MCPJARS%\minecraft.jar" "%JARTEMPDIR%\btw\MINECRAFT-JAR\*" > "%JARTEMPDIR%\adding-to-archive.out" 2>&1
-	if NOT ERRORLEVEL 0 (
+	"%ZIP%" a -tzip "%MCPJARS%\bin\minecraft.jar" "%JARTEMPDIR%\btw\MINECRAFT-JAR\*" > "%JARTEMPDIR%\adding-to-archive.out" 2>&1
+	if NOT %ERRORLEVEL% == 0 (
+		echo.
 		echo FAILED: See %JARTEMPDIR%\adding-to-archive.out
 		goto failed
 	)
 
 	echo Removing META-INF from minecraft.jar...
 	"%ZIP%" d -tzip "%MCPJARS%\bin\minecraft.jar" META-INF > "%JARTEMPDIR%\removing-meta-inf.out" 2>&1
-	if NOT ERRORLEVEL 0 (
+	if NOT %ERRORLEVEL% == 0 (
+		echo.
 		echo FAILED: See %JARTEMPDIR%\removing-meta-inf.out
 		goto failed
 	)
