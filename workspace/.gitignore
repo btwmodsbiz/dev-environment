@@ -1,0 +1,11 @@
+!/.gitignore
+/.metadata/*
+!/.metadata/.plugins/org.eclipse.core.runtime
+!/.metadata/.plugins/org.eclipse.core.runtime/.settings
+!/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.core.resources.prefs
+!/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.debug.ui.prefs
+!/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.epp.usagedata.gathering.prefs
+!/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.jdt.core.prefs
+!/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.editors.prefs
+!/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.ide.prefs
+!/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.prefs

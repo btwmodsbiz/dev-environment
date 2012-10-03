@@ -1,0 +1,6 @@
+!/.gitignore
+/temp/
+
+# Only include MCP conf, since that is all we want to monitor for changes.
+/mcp/*
+!/mcp/conf/
