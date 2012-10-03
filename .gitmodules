@@ -1,3 +1,12 @@
 [submodule "workspace/utils"]
 	path = workspace/utils
 	url = git@github.com:btwmodsbiz/dev-util.git
+[submodule "archives/btw"]
+	path = archives/btw
+	url = git@bitbucket.org:btwmodsbiz/dev-archives-btw.git
+[submodule "archives/mcp"]
+	path = archives/mcp
+	url = git@bitbucket.org:btwmodsbiz/dev-archives-mcp.git
+[submodule "archives/mojang"]
+	path = archives/mojang
+	url = git@bitbucket.org:btwmodsbiz/dev-archives-mojang.git
