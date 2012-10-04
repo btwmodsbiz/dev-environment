@@ -13,6 +13,7 @@ declare -r BTWARCHIVE=archives/btw
 declare -r MLARCHIVE=archives/modloader
 declare -r MCP=mcp
 declare -r MCPJARS=$MCP/jars
+declare -r CONF=conf
 
 function CHECKISWIN() {
 	if [ -z "$ISWIN" ]; then
@@ -48,6 +49,29 @@ function CHECKZIP() {
 	
 	echo
 	echo "ERROR: The 'zip' command is not available on your system or is not on your \$PATH."
+	EXITCLEAN 1
+}
+
+function CHECKPYTHON() {
+	if CHECKISWIN; then
+		if command python &> /dev/null; then
+			PYCMD=python
+			return 0
+		elif $ISWIN; then
+			PYCMD="$(FIXPATH "$SCRIPTDIR/$MCP/runtime/bin/python" python_mcp.exe)"
+			local ret=$?
+			
+			[ "$ret" == "0" ] && return 0
+			
+			echo
+			echo "ERROR: The 'python_mcp.exe' command could not be located in:"
+			echo "    $MCP/runtime/bin/python"
+			EXITCLEAN 1
+		fi
+	fi
+	
+	echo
+	echo "ERROR: The 'python' command is not available on your system or is not on your \$PATH."
 	EXITCLEAN 1
 }
 
