@@ -13,3 +13,6 @@
 [submodule "archives/modloader"]
 	path = archives/modloader
 	url = git@bitbucket.org:btwmodsbiz/dev-archives-modloader.git
+[submodule "workspace/server-src"]
+	path = workspace/server-src
+	url = git@bitbucket.org:btwmodsbiz/server-src.git
