@@ -36,6 +36,10 @@ function parse_arguments() {
 			;;
 	esac
 	
+	if ! $doclient -a ! $doserver; then
+		SYNTAX "Missing first argument. Must be 'client', 'server' or 'both'."
+	fi
+	
 	shift
 	
 	# Optional arguments.

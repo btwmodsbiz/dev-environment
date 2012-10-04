@@ -155,14 +155,14 @@ function EXITCLEAN() {
 		echo "$arg"
 	done
 	
-	exit $1
+	exit $ret
 }
 
 function SYNTAX() {
 	if [ -n "$SYNTAX" ]; then
-		EXITCLEAN "$@" "$SYNTAX"
+		EXITCLEAN 1 "$@" "$SYNTAX"
 	else
-		EXITCLEAN "$@"
+		EXITCLEAN 1 "$@"
 	fi
 }
 
