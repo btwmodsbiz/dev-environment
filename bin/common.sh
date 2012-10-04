@@ -2,6 +2,17 @@
 
 declare -r SCRIPTDIR="$(cd "$(dirname "$0")"; pwd)"
 
+# Set path constants.
+declare -r ARCHIVES=archives
+declare -r MOJANGARCHIVE=archives/mojang
+declare -r MCBIN=$MOJANGARCHIVE/bin
+declare -r MCCLIENT=$MCBIN/minecraft.jar
+declare -r MCRESOURCES=$MOJANGARCHIVE/resources
+declare -r MCSERVER=$MOJANGARCHIVE/minecraft_server.jar
+declare -r BTWARCHIVE=archives/btw
+declare -r MCP=mcp
+declare -r MCPJARS=$MCP/jars
+
 function CHECKISWIN() {
 	if [ -z "$ISWIN" ]; then
 		local UNAMECHECK="$(uname -s)"

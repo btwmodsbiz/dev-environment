@@ -3,20 +3,9 @@
 . bin/common.sh
 
 function main() {
-	# Set path constants.
-	declare -r MOJANGARCHIVE=archives/mojang
-	declare -r MCBIN=$MOJANGARCHIVE/bin
-	declare -r MCCLIENT=$MCBIN/minecraft.jar
-	declare -r MCRESOURCES=$MOJANGARCHIVE/resources
-	declare -r MCSERVER=$MOJANGARCHIVE/minecraft_server.jar
-	declare -r BTWARCHIVE=archives/btw
-	declare -r MCP=mcp
-	declare -r MCPJARS=$MCP/jars
-	
-	# Set other constants.
-	#declare -r TEMPDIR="$SCRIPTDIR/temp/createjar"
 	declare -r SYNTAX="Syntax: $0 <client|server|both>"
 	
+	# Argument defaults
 	local doclient=false
 	local doserver=false
 	
