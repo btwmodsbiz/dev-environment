@@ -102,16 +102,16 @@ function copy_fresh_files() {
 function copy_mod_files() {
 	if $doclient; then
 		local archive="$(FIXPATH "$SCRIPTDIR/$MCPJARS/bin" minecraft.jar)"
-		local btwfiles="$(FIXPATH "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT-JAR" '*')"
+	
 		local mlfiles="$(FIXPATH "$SCRIPTDIR/$MLARCHIVE" '*')"
-	
-		echo "Adding BTW files to minecraft.jar..."
-		ZIPADD "$archive" "$btwfiles" &> "$TEMPDIR/adding-btw-client.out"
-		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-btw-client.out"
-	
 		echo "Adding ModLoader files to minecraft.jar..."
 		ZIPADD "$archive" "$mlfiles" &> "$TEMPDIR/adding-modloader.out"
 		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-modloader.out"
+	
+		local btwfiles="$(FIXPATH "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT-JAR" '*')"
+		echo "Adding BTW files to minecraft.jar..."
+		ZIPADD "$archive" "$btwfiles" &> "$TEMPDIR/adding-btw-client.out"
+		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-btw-client.out"
 	
 		echo "Removing META-INF from minecraft.jar..."
 		ZIPDEL "$archive" "META-INF" &> "$TEMPDIR/adding-btw-client.out"
