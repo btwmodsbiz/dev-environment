@@ -16,3 +16,6 @@
 [submodule "workspace/server-src"]
 	path = workspace/server-src
 	url = git@bitbucket.org:btwmodsbiz/server-src.git
+[submodule "workspace/client-src"]
+	path = workspace/client-src
+	url = git@bitbucket.org:btwmodsbiz/client-src.git
