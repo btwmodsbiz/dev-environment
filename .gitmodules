@@ -10,3 +10,6 @@
 [submodule "archives/mojang"]
 	path = archives/mojang
 	url = git@bitbucket.org:btwmodsbiz/dev-archives-mojang.git
+[submodule "archives/modloader"]
+	path = archives/modloader
+	url = git@bitbucket.org:btwmodsbiz/dev-archives-modloader.git
