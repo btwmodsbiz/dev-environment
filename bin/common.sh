@@ -10,6 +10,7 @@ declare -r MCCLIENT=$MCBIN/minecraft.jar
 declare -r MCRESOURCES=$MOJANGARCHIVE/resources
 declare -r MCSERVER=$MOJANGARCHIVE/minecraft_server.jar
 declare -r BTWARCHIVE=archives/btw
+declare -r MLARCHIVE=archives/modloader
 declare -r MCP=mcp
 declare -r MCPJARS=$MCP/jars
 

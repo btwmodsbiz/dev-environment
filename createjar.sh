@@ -13,7 +13,7 @@ function main() {
 	init_verify
 	
 	copy_fresh_files
-	copy_btw_files
+	copy_mod_files
 }
 
 function parse_arguments() {
@@ -67,6 +67,8 @@ function init_verify() {
 		CHECK_FILE "$MCCLIENT" "Minecraft client jar"
 		CHECK_DIR "$MCRESOURCES" "Minecraft resources directory"
 		CHECK_DIR "$BTWARCHIVE/MINECRAFT-JAR" "BTW client files"
+		CHECK_DIR "$MLARCHIVE" "ModLoader directory"
+		CHECK_FILE "$MLARCHIVE/ModLoader.class" "ModLoader ModLoader.class file"
 	fi
 	
 	if $doserver; then
@@ -96,15 +98,20 @@ function copy_fresh_files() {
 	fi
 }
 
-# Copy BTW into Minecraft.
-function copy_btw_files() {
+# Copy mod into Minecraft.
+function copy_mod_files() {
 	if $doclient; then
 		local archive="$(FIXPATH "$SCRIPTDIR/$MCPJARS/bin" minecraft.jar)"
-		local addedfiles="$(FIXPATH "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT-JAR" '*')"
+		local btwfiles="$(FIXPATH "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT-JAR" '*')"
+		local mlfiles="$(FIXPATH "$SCRIPTDIR/$MLARCHIVE" '*')"
 	
 		echo "Adding BTW files to minecraft.jar..."
-		ZIPADD "$archive" "$addedfiles" &> "$TEMPDIR/adding-btw-client.out"
+		ZIPADD "$archive" "$btwfiles" &> "$TEMPDIR/adding-btw-client.out"
 		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-btw-client.out"
+	
+		echo "Adding ModLoader files to minecraft.jar..."
+		ZIPADD "$archive" "$mlfiles" &> "$TEMPDIR/adding-modloader.out"
+		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-modloader.out"
 	
 		echo "Removing META-INF from minecraft.jar..."
 		ZIPDEL "$archive" "META-INF" &> "$TEMPDIR/adding-btw-client.out"
