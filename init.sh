@@ -20,7 +20,6 @@ function main() {
 	local hasfailed=false
 	while IFS=" " read sha path; do
 		if [ "${sha:0:1}" == "-" ]; then
-			#echo $sha ${sha:0:1} -- ${sha:1} -- $path
 			sha="${sha:1}"
 			url="$(git config --local "submodule.$path.url")"
 			
