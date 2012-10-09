@@ -14,6 +14,15 @@ declare -r MLARCHIVE=archives/modloader
 declare -r MCP=mcp
 declare -r MCPJARS=$MCP/jars
 declare -r CONF=conf
+declare -r WORKSPACE=workspace
+
+declare -r SERVER_API_PROJECT=$WORKSPACE/server-api
+declare -r SERVER_SRC_PROJECT=$WORKSPACE/server-src
+declare -r SERVER_SRC_DECOMPILEBRANCH=btw
+
+declare -r CLIENT_API_PROJECT=$WORKSPACE/client-api
+declare -r CLIENT_SRC_PROJECT=$WORKSPACE/client-src
+declare -r CLIENT_SRC_DECOMPILEBRANCH=btw
 
 function CHECKISWIN() {
 	if [ -z "$ISWIN" ]; then
