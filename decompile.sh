@@ -13,13 +13,18 @@ function main() {
 	local doserver=true
 	local branch=
 	
-	check_client_src_project() || EXITCLEAN $?
-	check_server_src_project() || EXITCLEAN $?
+	check_client_src_project || EXITCLEAN $?
+	check_server_src_project || EXITCLEAN $?
 	
 	if $doserver || $doclient; then
 		echo
 		cd "$SCRIPTDIR/$MCP"
 		"$PYCMD" "$scriptpath" -r -c "$cfgpath"
+		ret=$?
+		[ $ret -ne 0 ] && echo "ERROR: decompile.py failed with exit: $ret" && EXITCLEAN 1
+	else
+		echo "ERROR: Neither client nor server passed checks. Nothing to do."
+		EXITCLEAN 1
 	fi
 }
 
@@ -45,6 +50,8 @@ check_client_src_project() {
 		rm -rf "$SCRIPTDIR/$CLIENT_SRC_PROJECT/src"
 		[ $? -ne 0 ] && echo "ERROR: Could not remove old src directory." && return 1
 	fi
+	
+	return 0
 }
 
 check_server_src_project() {
@@ -69,14 +76,8 @@ check_server_src_project() {
 		rm -rf "$SCRIPTDIR/$SERVER_SRC_PROJECT/src"
 		[ $? -ne 0 ] && echo "ERROR: Could not remove old src directory." && return 1
 	fi
-}
-
-do_client() {
 	
-}
-
-do_server() {
-	
+	return 0
 }
 
 main "$@"
