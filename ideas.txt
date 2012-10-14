@@ -1,0 +1,2 @@
+- Command listener is able to intercept command for dumping stack trace for main thread.
+- Some mechanism that lets you fly for a short amount of time.
