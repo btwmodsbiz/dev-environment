@@ -126,9 +126,9 @@ function copy_mod_files() {
 		ZIPADD "$archive" "$addedfiles" &> "$TEMPDIR/adding-btw-client.out"
 		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-btw-client.out"
 	
-		echo "Removing META-INF from minecraft_server.jar..."
-		ZIPDEL "$archive" "META-INF" &> "$TEMPDIR/removing-metainf-server.out"
-		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/removing-metainf-server.out"
+		#echo "Removing META-INF from minecraft_server.jar..."
+		#ZIPDEL "$archive" "META-INF" &> "$TEMPDIR/removing-metainf-server.out"
+		#[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/removing-metainf-server.out"
 	fi
 }
 
