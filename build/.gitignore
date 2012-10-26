@@ -1,0 +1,10 @@
+!/.gitignore
+*.zip
+*.jar
+/world/
+/banned-ips.txt
+/banned-players.txt
+/ops.txt
+/server.log
+/server.properties
+/white-list.txt

@@ -9,3 +9,4 @@
 !/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.editors.prefs
 !/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.ide.prefs
 !/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.prefs
+/server-vmc*
