@@ -112,6 +112,22 @@ function ZIPDEL() {
 	fi
 }
 
+function ZIPEXTRACT() {
+	local archive="$1"
+	shift
+	
+	local destination="$1"
+	shift
+	
+	if [ "$ZIPCMD" == "7za" ]; then
+		cmd.exe //c "$ZIPPATH" x -tzip -o"$destination" "$archive" "$@"
+		return $?
+	else
+		unzip "$archive" -d "$destination" "$@"
+		return $?
+	fi
+}
+
 function FIXPATH() {
 	CHECKISWIN || return 1
 	
