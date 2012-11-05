@@ -22,3 +22,6 @@
 [submodule "workspace/server-api"]
 	path = workspace/server-api
 	url = git@github.com:btwmodsbiz/server-api.git
+[submodule "workspace/server-mods"]
+	path = workspace/server-mods
+	url = git@github.com:btwmodsbiz/server-mods.git
