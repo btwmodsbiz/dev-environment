@@ -1,6 +1,12 @@
 #!/bin/bash
 
-declare -r SCRIPTDIR="$(cd "$(dirname "$0")"; pwd)"
+# Prevent script from being executed directly.
+[ -z "$BASH_SOURCE" -o "$BASH_SOURCE" == "$0" ] && exit 1
+
+declare -r __COMMON_DIR="$(cd "$(dirname "$BASH_SOURCE" 2> /dev/null)"; pwd)"
+
+. "$__COMMON_DIR/common_argvalidation.sh" || return 1
+. "$__COMMON_DIR/common_multiplatform.sh" || return 1
 
 # Set path constants.
 declare -r ARCHIVES=archives
@@ -11,11 +17,13 @@ declare -r MCRESOURCES=$MOJANGARCHIVE/resources
 declare -r MCSERVER=$MOJANGARCHIVE/minecraft_server.jar
 declare -r BTWARCHIVE=archives/btw
 declare -r MLARCHIVE=archives/modloader
+declare -r MCPARCHIVE=archives/mcp
 declare -r MCP=mcp
 declare -r MCPJARS=$MCP/jars
 declare -r CONF=conf
 declare -r WORKSPACE=workspace
 
+declare -r SERVER_MODS_PROJECT=$WORKSPACE/server-mods
 declare -r SERVER_API_PROJECT=$WORKSPACE/server-api
 declare -r SERVER_SRC_PROJECT=$WORKSPACE/server-src
 declare -r SERVER_SRC_DECOMPILEBRANCH=btw
@@ -24,149 +32,75 @@ declare -r CLIENT_API_PROJECT=$WORKSPACE/client-api
 declare -r CLIENT_SRC_PROJECT=$WORKSPACE/client-src
 declare -r CLIENT_SRC_DECOMPILEBRANCH=btw
 
-function CHECKISWIN() {
-	if [ -z "$ISWIN" ]; then
-		local UNAMECHECK="$(uname -s)"
-		if [ "${UNAMECHECK:0:5}" == "MSYS_" -o "${UNAMECHECK:0:8}" == "MINGW32_" ]; then
-			ISWIN=true
-		else
-			ISWIN=false
-		fi
+declare -r PYTHON_WIN_DIR="$__COMMON_DIR/../$MCPARCHIVE/runtime/bin/python"
+declare -r JAVA_WIN_DIR='/c/Program Files/Java'
+
+function EXPORT_BRANCH() {
+	VALIDATE_ARGUMENTS $FUNCNAME -c4 !-e4 -- $@
+	
+	local branch="$1"
+	local remote="$2"
+	local dest="$3"
+	local log="$4"
+	local ret=
+	
+	if [ ! -d "$TEMPDIR" ]; then
+		echo '$TEMPDIR has not been set or is not a directory' > "$log"
+		return 1
 	fi
+	
+	if [ ! -d "$dest" ]; then
+		echo "$dest is not a directory" > "$log"
+		return 1
+	fi
+	
+	git archive --remote="$remote" "$branch" src > "$TEMPDIR/export_branch.tar" 2> "$log"
+	ret=$?
+	
+	if [ $ret -ne 0 ]; then
+		rm "$TEMPDIR/export_branch.tar"
+		return $ret
+	fi
+	
+	tar -xf "$TEMPDIR/export_branch.tar" --strip-components=1 -C "$dest" 2> "$log"
+	ret=$?
+	
+	rm "$TEMPDIR/export_branch.tar" &> /dev/null
+	[ $ret -ne 0 ] && return $ret
 	
 	return 0
 }
 
-function CHECKZIP() {
-	if CHECKISWIN; then
-		if command zip &> /dev/null; then
-			ZIPCMD=zip
-			return 0
-		elif $ISWIN; then
-			ZIPCMD=7za
-			ZIPPATH="$(FIXPATH "$SCRIPTDIR/bin/7za" 7za.exe)"
-			local ret=$?
-			
-			[ "$ret" == "0" ] && return 0
-			
-			echo
-			echo "ERROR: The '7za.exe' command could not be located in:"
-			echo "    $SCRIPTDIR/bin/7za"
-			EXITCLEAN 1
-		fi
-	fi
-	
-	echo
-	echo "ERROR: The 'zip' command is not available on your system or is not on your \$PATH."
-	EXITCLEAN 1
-}
+function EXPORT_BRANCH_SAFE() {
+	VALIDATE_ARGUMENTS $FUNCNAME -l3 -u4 -- $@
 
-function CHECKPYTHON() {
-	if CHECKISWIN; then
-		if command python &> /dev/null; then
-			PYCMD=python
-			return 0
-		elif $ISWIN; then
-			PYCMD="$(FIXPATH "$SCRIPTDIR/$MCP/runtime/bin/python" python_mcp.exe)"
-			local ret=$?
-			
-			[ "$ret" == "0" ] && return 0
-			
-			echo
-			echo "ERROR: The 'python_mcp.exe' command could not be located in:"
-			echo "    $MCP/runtime/bin/python"
-			EXITCLEAN 1
-		fi
-	fi
+	local branch="$1"
+	local remote="$2"
+	local remoteprefix="$2"
+	local dest="$4"
 	
-	echo
-	echo "ERROR: The 'python' command is not available on your system or is not on your \$PATH."
-	EXITCLEAN 1
-}
-
-function ZIPADD() {
-	CHECKZIP || return 1
-	
-	local archive="$1"
-	shift
-	
-	if [ "$ZIPCMD" == "7za" ]; then
-		cmd.exe //c "$ZIPPATH" a -tzip "$archive" "$@"
-		return $?
+	# Allow fourth argument to be optional.
+	if [ -z "$dest" ]; then
+		dest="$remoteprefix"
+		remoteprefix=
+		fullremote="$remote"
 	else
-		zip "$archive" "$@"
-		return $?
-	fi
-}
-
-function ZIPDEL() {
-	local archive="$1"
-	shift
-	
-	if [ "$ZIPCMD" == "7za" ]; then
-		cmd.exe //c "$ZIPPATH" d -tzip "$archive" "$@"
-		return $?
-	else
-		zip -d "$archive" "$@"
-		return $?
-	fi
-}
-
-function ZIPEXTRACT() {
-	local archive="$1"
-	shift
-	
-	local destination="$1"
-	shift
-	
-	if [ "$ZIPCMD" == "7za" ]; then
-		cmd.exe //c "$ZIPPATH" x -tzip -o"$destination" "$archive" "$@"
-		return $?
-	else
-		unzip "$archive" -d "$destination" "$@"
-		return $?
-	fi
-}
-
-function FIXPATH() {
-	CHECKISWIN || return 1
-	
-	local fixedpath=
-	local dirname="$1"
-	shift
-	
-	[ ! -d "$dirname" ] && return 1
-	
-	if $ISWIN; then
-		fixedpath="$(cd "$dirname"; cmd //c cd)"
-	else
-		fixedpath="$(cd "$dirname"; pwd)"
+		fullremote="$remote"
 	fi
 	
-	# Trim a single trailing slash, if it exists.
-	fixedpath="${fixedpath%/}"
-	fixedpath="${fixedpath%\\}"
+	fullremote="$remoteprefix$remote"
 	
-	while [ "$#" != "0" ]; do
-		local part="$1"
-		
-		# Trim slashes
-		part="$(echo "$part" | sed -e 's#^/*##g' -e 's#/*$##g')"
-		
-		if $ISWIN; then
-			fixedpath="$fixedpath\\${part/\//\\}"
-		else
-			fixedpath="$fixedpath/$part"
-		fi
-		
-		shift
-	done
+	echo "Exporting '$branch' branch from $remote..."
 	
-	echo "$fixedpath"
-	return 0
+	VALIDATE_ARGUMENTS $FUNCNAME -d1 -- "$dest"
+	
+	EXPORTBRANCH "$branch" "$fullremote" "$dest" "$TEMPDIR/export.out"
+	[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/export.out"
 }
 
 function FAIL_CAT() {
+	VALIDATE_ARGUMENTS $FUNCNAME -c1 -f1 -- $@
+	
 	echo "FAILED. See below:"
 	echo "================================================="
 	cat "$1"
@@ -174,6 +108,8 @@ function FAIL_CAT() {
 }
 
 function MKCLEANTEMP() {
+	VALIDATE_ARGUMENTS $FUNCNAME -c1 -n1 !-f1 -- $@
+	
 	# First remove any existing temp dir if $TEMPDIR was already set.
 	RMTEMP
 	
@@ -186,6 +122,36 @@ function MKCLEANTEMP() {
 	[ $? -ne 0 ] && echo "ERROR: Could not create temp directory at:" && echo "    $TEMPDIR" && EXITCLEAN 1
 }
 
+function MKDIR_SAFE() {
+	VALIDATE_ARGUMENTS $FUNCNAME -l1 -u2 -n1 -- $@
+	
+	local dirprefix="$1"
+	local dir="$2"
+	
+	# Allow second argument to be optional.
+	if [ -z "$dir" ]; then
+		dir="$dirprefix"
+		dirprefix=
+		fulldir="$dir"
+	else
+		fulldir="$dirprefix/$dir"
+	fi
+	
+	[ -e "$fulldir" -a ! -d "$fulldir" ] \
+		&& echo "ERROR: Could not create directory as it already exists and is not a directory:" \
+		&& echo "    $dir" \
+		&& EXITCLEAN 1
+		
+	if [ ! -d "$fulldir" ]; then
+		mkdir -p "$fulldir" > /dev/null
+		
+		[ $? -ne 0 ] \
+			&& echo "ERROR: Could not create directory at:" \
+			&& echo "    $dir" \
+			&& EXITCLEAN 1
+	fi
+}
+
 function RMTEMP() {
 	if [ -n "$TEMPDIR" -a -d "$TEMPDIR" ]; then
 		rm -rf "$TEMPDIR" &> /dev/null
@@ -196,6 +162,7 @@ function RMTEMP() {
 }
 
 function EXITCLEAN() {
+	
 	local ret="$1"
 	shift
 	
@@ -205,6 +172,7 @@ function EXITCLEAN() {
 		echo "$arg"
 	done
 	
+	VALIDATE_ARGUMENTS $FUNCNAME -i1 -- "$ret"
 	exit $ret
 }
 
@@ -216,18 +184,46 @@ function SYNTAX() {
 	fi
 }
 
-function CHECK_FILE() {
-	if [ ! -f "$SCRIPTDIR/$1" ]; then
+function CHECK_FILE_SAFE() {
+	VALIDATE_ARGUMENTS $FUNCNAME -l2 -u3 -n1 -n2 -- $@
+	
+	local pathprefix="$2"
+	local path="$2"
+	local file="$1"
+	
+	# Allow first argument to be optional.
+	if [ -z "$file" ]; then
+		file="$path"
+		path="$pathprefix"
+		pathprefix=
+	fi
+	
+	if [ ! -f "$pathprefix$path/$file" ]; then
 		echo
-		echo "ERROR: $2 not found at: $1"
+		echo "ERROR: $file not found at: $path"
 		EXITCLEAN 1
 	fi
 }
 
-function CHECK_DIR() {
-	if [ ! -d "$SCRIPTDIR/$1" ]; then
+function CHECK_DIR_SAFE() {
+	VALIDATE_ARGUMENTS $FUNCNAME -l2 -u3 -n1 -n2 -- $@
+	
+	local pathprefix="$2"
+	local path="$2"
+	local dir="$1"
+	
+	# Allow first argument to be optional.
+	if [ -z "$dir" ]; then
+		dir="$path"
+		path="$pathprefix"
+		pathprefix=
+	fi
+	
+	if [ ! -d "$pathprefix$path/$dir" ]; then
 		echo
-		echo "ERROR: $2 not found at: $1"
+		echo "ERROR: $dir not found at: $path"
 		EXITCLEAN 1
 	fi
 }
+
+true
