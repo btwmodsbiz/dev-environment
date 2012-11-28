@@ -1,4 +1,12 @@
+additionIndicationInOverviewRuler=true
+changeIndicationInOverviewRuler=true
+deletionIndicationInOverviewRuler=true
 eclipse.preferences.version=1
 lineNumberRuler=true
+occurrenceIndicationColor=195,195,195
 overviewRuler_migration=migrated_3.1
+quickdiff.defaultProvider=org.eclipse.egit.ui.internal.decorators.GitQuickDiffProvider
+quickdiff.nowarn.before.switch=always
+quickdiff.quickDiff=false
 spacesForTabs=true
+writeOccurrenceIndicationColor=235,203,137
