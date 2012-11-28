@@ -3,13 +3,13 @@
 SETLOCAL
 
 set scriptdir=%~dp0
-cd "%scriptdir%\mcp\jars"
+cd "%scriptdir%\workspace\.minecraft"
 if NOT %ERRORLEVEL% == 0 (
-	echo Could not change directory to mcp\jars dir.
+	echo Could not change directory to workspace\.minecraft dir.
 	goto failed
 )
 
-start javaw.exe -Xincgc -Xmx1024M -Xms1024M -Djava.library.path=..\..\mcp\jars\bin\natives -Dfile.encoding=Cp1252 -classpath ..\..\workspace\client-src\bin;..\..\mcp\jars\bin\jinput.jar;..\..\mcp\jars\bin\lwjgl_util.jar;..\..\mcp\jars\bin\lwjgl.jar;..\..\mcp\jars\bin\minecraft.jar Start
+start javaw.exe -Xincgc -Xmx512M -Djava.library.path=..\..\archives\mojang\bin\natives -Dfile.encoding=Cp1252 -classpath ..\..\workspace\client-src\bin;..\..\archives\mojang\bin\jinput.jar;..\..\archives\mojang\bin\lwjgl_util.jar;..\..\archives\mojang\bin\lwjgl.jar;..\..\archives\mojang\bin\minecraft.jar;..\..\archives\btw\MINECRAFT-JAR Start
 
 :success
 exit /B 0

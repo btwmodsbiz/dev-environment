@@ -1,5 +1,7 @@
 !/.gitignore
 
+/.minecraft/
+
 /.metadata/*
 
 !/.metadata/.plugins

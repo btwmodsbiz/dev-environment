@@ -1,31 +1,75 @@
 #!/bin/bash
 
-. bin/common.sh
+# Standard script header.
+# ==========================================
+[ -z "$BASH_SOURCE" ] && echo "ERROR: This script cannot be run if piped to bash." && exit 1
+cd "$(dirname "$BASH_SOURCE" 2> /dev/null)" 2> /dev/null;
+[ $? -ne 0 ] && "ERROR: Failed to change to the working directory of: $BASH_SOURCE" && exit 1
+
+declare -r SCRIPTDIR="$(pwd)"
+. "$SCRIPTDIR/bin/common.sh";
+[ $? -ne 0 ] && echo "ERROR: Failed to include bin/common.sh" && exit 1
+# ==========================================
 
 function main() {
 	MKCLEANTEMP "$SCRIPTDIR/temp/decompile"
-
+	
 	CHECKPYTHON
 	local cfgpath="$(FIXPATH "$SCRIPTDIR/$CONF" mcp-decompile.cfg)"
-	local scriptpath="$(FIXPATH "$SCRIPTDIR/$MCP/runtime" decompile.py)"
+	local decompilescript="$(FIXPATH "$SCRIPTDIR/$MCPARCHIVE/runtime" decompile.py)"
 	
 	local doclient=true
 	local doserver=true
+	local checkdirty=false
 	local branch=
+	
+	parse_arguments
 	
 	check_client_src_project || EXITCLEAN $?
 	check_server_src_project || EXITCLEAN $?
 	
+	mkdir "$TEMPDIR/jars"
+	[ $? -ne 0 ] && echo "Failed to create $TEMPDIR/jars" && EXITCLEAN 1
+	
+	if $doserver && $doclient; then
+		"$SCRIPTDIR/createjar.sh" both -d "$TEMPDIR/jars"
+		[ $? -ne 0 ] && EXITCLEAN 1
+		
+	elif $doserver; then
+		"$SCRIPTDIR/createjar.sh" server -d "$TEMPDIR/jars"
+		[ $? -ne 0 ] && EXITCLEAN 1
+		
+	elif $doclient; then
+		"$SCRIPTDIR/createjar.sh" client -d "$TEMPDIR/jars"
+		[ $? -ne 0 ] && EXITCLEAN 1
+	fi
+	
 	if $doserver || $doclient; then
 		echo
-		cd "$SCRIPTDIR/$MCP"
-		"$PYCMD" "$scriptpath" -r -c "$cfgpath"
+		cd "$SCRIPTDIR/$MCPARCHIVE"
+		"$PYCMD" "$decompilescript" -c "$cfgpath"
 		ret=$?
-		[ $ret -ne 0 ] && echo "ERROR: decompile.py failed with exit: $ret" && EXITCLEAN 1
+		[ $ret -ne 0 ] && echo "ERROR: decompile.py failed with exit: $ret" && exit 1
 	else
 		echo "ERROR: Neither client nor server passed checks. Nothing to do."
 		EXITCLEAN 1
 	fi
+}
+
+function parse_arguments() {
+	# Optional arguments.
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			"-f")
+				shift
+				checkdirty=false
+				;;
+			*)
+				SYNTAX "Unexpected argument: $1"
+				;;
+		esac
+		shift
+	done
 }
 
 check_client_src_project() {
@@ -40,11 +84,13 @@ check_client_src_project() {
 	fi
 	
 	if $doclient && [ -d "$SCRIPTDIR/$CLIENT_SRC_PROJECT/src" ]; then
-		(cd "$SCRIPTDIR/$CLIENT_SRC_PROJECT" && git status -u --ignored --porcelain 2> /dev/null > "$TEMPDIR/gitstatus")
-		[ $? -ne 0 ] && echo "ERROR: Could not get a list of untracked/ignored files for: $CLIENT_SRC_PROJECT" && return 1
-		
-		statuslines="$(grep -v '!! bin/' "$TEMPDIR/gitstatus" | wc -l | tr -d '\t ')"
-		[ "$statuslines" != "0" ] && echo "ERROR: One or more untracked or ignored files are in: $CLIENT_SRC_PROJECT" && echo "       You must remove or stash them. See: git status -u --ignored" && return 1
+		if $checkdirty; then
+			(cd "$SCRIPTDIR/$CLIENT_SRC_PROJECT" && git status -u --ignored --porcelain 2> /dev/null > "$TEMPDIR/gitstatus")
+			[ $? -ne 0 ] && echo "ERROR: Could not get a list of untracked/ignored files for: $CLIENT_SRC_PROJECT" && return 1
+			
+			statuslines="$(grep -v '!! bin/' "$TEMPDIR/gitstatus" | wc -l | tr -d '\t ')"
+			[ "$statuslines" != "0" ] && echo "ERROR: One or more untracked or ignored files are in: $CLIENT_SRC_PROJECT" && echo "       You must remove or stash them. See: git status -u --ignored" && return 1
+		fi
 		
 		echo "Removing $CLIENT_SRC_PROJECT/src..."
 		rm -rf "$SCRIPTDIR/$CLIENT_SRC_PROJECT/src"
@@ -66,11 +112,13 @@ check_server_src_project() {
 	fi
 	
 	if $doserver && [ -d "$SCRIPTDIR/$SERVER_SRC_PROJECT/src" ]; then
-		(cd "$SCRIPTDIR/$SERVER_SRC_PROJECT" && git status -u --ignored --porcelain 2> /dev/null > "$TEMPDIR/gitstatus")
-		[ $? -ne 0 ] && echo "ERROR: Could not get a list of untracked/ignored files for: $SERVER_SRC_PROJECT" && return 1
-		
-		statuslines="$(grep -v '!! bin/' "$TEMPDIR/gitstatus" | wc -l | tr -d '\t ')"
-		[ "$statuslines" != "0" ] && echo "ERROR: One or more untracked or ignored files are in: $SERVER_SRC_PROJECT" && echo "       You must remove or stash them. See: git status -u --ignored" && return 1
+		if $checkdirty; then
+			(cd "$SCRIPTDIR/$SERVER_SRC_PROJECT" && git status -u --ignored --porcelain 2> /dev/null > "$TEMPDIR/gitstatus")
+			[ $? -ne 0 ] && echo "ERROR: Could not get a list of untracked/ignored files for: $SERVER_SRC_PROJECT" && return 1
+			
+			statuslines="$(grep -v '!! bin/' "$TEMPDIR/gitstatus" | wc -l | tr -d '\t ')"
+			[ "$statuslines" != "0" ] && echo "ERROR: One or more untracked or ignored files are in: $SERVER_SRC_PROJECT" && echo "       You must remove or stash them. See: git status -u --ignored" && return 1
+		fi
 		
 		echo "Removing $SERVER_SRC_PROJECT/src..."
 		rm -rf "$SCRIPTDIR/$SERVER_SRC_PROJECT/src"

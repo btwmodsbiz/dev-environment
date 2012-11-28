@@ -75,33 +75,35 @@ function EXPORT_BRANCH_SAFE() {
 	VALIDATE_ARGUMENTS $FUNCNAME -l3 -u4 -- $@
 
 	local branch="$1"
-	local remote="$2"
 	local remoteprefix="$2"
+	local remote="$3"
 	local dest="$4"
 	
-	# Allow fourth argument to be optional.
+	# Allow second argument to be optional.
 	if [ -z "$dest" ]; then
-		dest="$remoteprefix"
+		dest="$remote"
+		remote="$remoteprefix"
 		remoteprefix=
-		fullremote="$remote"
-	else
-		fullremote="$remote"
 	fi
-	
-	fullremote="$remoteprefix$remote"
 	
 	echo "Exporting '$branch' branch from $remote..."
 	
 	VALIDATE_ARGUMENTS $FUNCNAME -d1 -- "$dest"
 	
-	EXPORTBRANCH "$branch" "$fullremote" "$dest" "$TEMPDIR/export.out"
+	EXPORT_BRANCH "$branch" "$remoteprefix$remote" "$dest" "$TEMPDIR/export.out"
 	[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/export.out"
 }
 
 function FAIL_CAT() {
-	VALIDATE_ARGUMENTS $FUNCNAME -c1 -f1 -- $@
+	VALIDATE_ARGUMENTS $FUNCNAME -l1 -u2 -f1 -- $@
 	
-	echo "FAILED. See below:"
+	local file="$1"
+	local message="$2"
+	
+	[ -z "$message" ] && message=FAILED
+	
+	echo
+	echo "$message. See below:"
 	echo "================================================="
 	cat "$1"
 	EXITCLEAN 1
@@ -132,18 +134,15 @@ function MKDIR_SAFE() {
 	if [ -z "$dir" ]; then
 		dir="$dirprefix"
 		dirprefix=
-		fulldir="$dir"
-	else
-		fulldir="$dirprefix/$dir"
 	fi
 	
-	[ -e "$fulldir" -a ! -d "$fulldir" ] \
+	[ -e "$dirprefix$dir" -a ! -d "$dirprefix$dir" ] \
 		&& echo "ERROR: Could not create directory as it already exists and is not a directory:" \
 		&& echo "    $dir" \
 		&& EXITCLEAN 1
 		
-	if [ ! -d "$fulldir" ]; then
-		mkdir -p "$fulldir" > /dev/null
+	if [ ! -d "$dirprefix$dir" ]; then
+		mkdir -p "$dirprefix$dir" > /dev/null
 		
 		[ $? -ne 0 ] \
 			&& echo "ERROR: Could not create directory at:" \
@@ -187,20 +186,20 @@ function SYNTAX() {
 function CHECK_FILE_SAFE() {
 	VALIDATE_ARGUMENTS $FUNCNAME -l2 -u3 -n1 -n2 -- $@
 	
-	local pathprefix="$2"
+	local pathprefix="$1"
 	local path="$2"
-	local file="$1"
+	local name="$3"
 	
 	# Allow first argument to be optional.
-	if [ -z "$file" ]; then
-		file="$path"
+	if [ -z "$name" ]; then
+		name="$path"
 		path="$pathprefix"
 		pathprefix=
 	fi
 	
-	if [ ! -f "$pathprefix$path/$file" ]; then
+	if [ ! -f "$pathprefix$path" ]; then
 		echo
-		echo "ERROR: $file not found at: $path"
+		echo "ERROR: $name not found at: $path"
 		EXITCLEAN 1
 	fi
 }
@@ -208,20 +207,20 @@ function CHECK_FILE_SAFE() {
 function CHECK_DIR_SAFE() {
 	VALIDATE_ARGUMENTS $FUNCNAME -l2 -u3 -n1 -n2 -- $@
 	
-	local pathprefix="$2"
+	local pathprefix="$1"
 	local path="$2"
-	local dir="$1"
+	local name="$3"
 	
 	# Allow first argument to be optional.
-	if [ -z "$dir" ]; then
-		dir="$path"
+	if [ -z "$name" ]; then
+		name="$path"
 		path="$pathprefix"
 		pathprefix=
 	fi
 	
-	if [ ! -d "$pathprefix$path/$dir" ]; then
+	if [ ! -d "$pathprefix$path" ]; then
 		echo
-		echo "ERROR: $dir not found at: $path"
+		echo "ERROR: $name not found at: $path"
 		EXITCLEAN 1
 	fi
 }

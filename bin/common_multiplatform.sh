@@ -84,6 +84,33 @@ function CHECKZIP() {
 	fi
 }
 
+function CHECKUNZIP() {
+	if [ -z "$UNZIPCMD" ]; then
+		CHECKISWIN
+		
+		if command -v unzip &> /dev/null; then
+			UNZIPCMD=zip
+			return 0
+			
+		elif $ISWIN; then
+			if [ -f "$__COMMON_DIR/7za/7za.exe" ]; then
+				UNZIPCMD=7za
+				ZIPPATH="$(FIXPATH "$__COMMON_DIR/7za" 7za.exe)"
+				[ $? -eq 0 ] && return 0
+			fi
+			
+			echo
+			echo "ERROR: The '7za.exe' command could not be located in:"
+			echo "    $__COMMON_DIR/7za"
+			EXITCLEAN 1
+		fi
+		
+		echo
+		echo "ERROR: The 'unzip' command is not available on your system or is not on your \$PATH."
+		EXITCLEAN 1
+	fi
+}
+
 function CHECKPYTHON() {
 	CHECKISWIN
 	
@@ -92,14 +119,14 @@ function CHECKPYTHON() {
 		return 0
 		
 	elif $ISWIN; then
-		if [ -f "PYTHON_WIN_DIR/python_mcp.exe" ]; then
-			PYCMD="$(FIXPATH "PYTHON_WIN_DIR" python_mcp.exe)"
+		if [ -f "$PYTHON_WIN_DIR/python_mcp.exe" ]; then
+			PYCMD="$(FIXPATH "$PYTHON_WIN_DIR" python_mcp.exe)"
 			[ $? -eq 0 ] && return 0
 		fi
 		
 		echo
 		echo "ERROR: The 'python_mcp.exe' command could not be located in:"
-		echo "    $MCPARCHIVE/runtime/bin/python"
+		echo "    $PYTHON_WIN_DIR"
 		EXITCLEAN 1
 	fi
 	
@@ -142,11 +169,18 @@ function CHECKJAVAC() {
 function ZIPADD() {
 	CHECKZIP
 	
-	local archive="$1"
-	shift
+	local create=
+	[ "$1" == "-c" ] && create=true && shift
+	
+	local archive="$1"; shift
+	
+	[ -z "$create" -a ! -f "$archive" ] && return 1
+	[ -n "$create" -a -f "$archive" ] && return 1
+	
+	echo "$archive"
 	
 	if [ "$ZIPCMD" == "7za" ]; then
-		cmd.exe //c "$ZIPPATH" a -tzip "$archive" "$@"
+		cmd.exe //c "$ZIPPATH" a -tzip "$(FIXPATH "$(dirname "$archive")" "$(basename "$archive")")" "$@"
 		return $?
 	else
 		zip "$archive" "$@"
@@ -154,11 +188,29 @@ function ZIPADD() {
 	fi
 }
 
+function ZIPADD_SAFE() {
+	local quiet=false
+	[ "$1" == "-q" ] && quiet=true && shift
+	
+	local create=
+	[ "$1" == "-c" ] && create='-c' && shift
+	
+	VALIDATE_ARGUMENTS $FUNCNAME -l1 -- $@
+	
+	local archiveprefix="$1"; shift
+	local archive="$1"; shift
+	
+	$quiet || echo "Adding to $archive archive..."
+	ZIPADD $create "$archiveprefix$archive" $@ &> "$TEMPDIR/zipadd.out"
+	[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/zipadd.out"
+}
+
 function ZIPDEL() {
 	CHECKZIP
 	
-	local archive="$1"
-	shift
+	local archive="$1"; shift
+	
+	[ ! -f "$archive" ] && return 1
 	
 	if [ "$ZIPCMD" == "7za" ]; then
 		cmd.exe //c "$ZIPPATH" d -tzip "$archive" "$@"
@@ -170,21 +222,43 @@ function ZIPDEL() {
 }
 
 function ZIPEXTRACT() {
-	CHECKZIP
+	CHECKUNZIP
 	
-	local archive="$1"
-	shift
+	local archive="$1"; shift
+	local destination="$1"; shift
 	
-	local destination="$1"
-	shift
+	[ ! -f "$archive" ] && return 1
+	[ ! -d "$destination" ] && return 1
 	
-	if [ "$ZIPCMD" == "7za" ]; then
-		cmd.exe //c "$ZIPPATH" x -tzip -o"$destination" "$archive" "$@"
+	if [ "$UNZIPCMD" == "7za" ]; then
+		cmd.exe //c "$ZIPPATH" x -tzip -o"$(FIXPATH "$destination")" "$(FIXPATH "$(dirname "$archive")" "$(basename "$archive")")" "$@"
 		return $?
 	else
-		unzip "$archive" -d "$destination" "$@"
+		unzip -o "$archive" -d "$destination" "$@"
 		return $?
 	fi
+}
+
+function ZIPEXTRACT_SAFE() {
+	local quiet=false
+	[ "$1" == "-q" ] && quiet=true && shift
+	
+	VALIDATE_ARGUMENTS $FUNCNAME -l2 -f1 -d2 -- $@
+	
+	local archiveprefix="$1"; shift
+	local archive="$1"; shift
+	local dest="$1"; shift
+	
+	# Allow first argument to be optional.
+	if [ -z "$dest" ]; then
+		dest="$archive"
+		archive="$archiveprefix"
+		archiveprefix=
+	fi
+	
+	$quiet || echo "Extracting $archive..."
+	ZIPEXTRACT "$archiveprefix$archive" "$dest" $@ &> "$TEMPDIR/zipextract.out"
+	[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/zipextract.out"
 }
 
 true

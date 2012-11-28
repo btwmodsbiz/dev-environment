@@ -1,0 +1,10 @@
+# Syntax: <command> [<arg>, ...]
+#
+# Commands:
+#   jar [-nojava] <jarfile>
+#   zip [-nojava] <zipfile>
+#
+# Arguments may be quoted.
+
+jar -nojava archives/mojang/minecraft_server.jar
+jar bin/javalib/gson-2.2.2.jar

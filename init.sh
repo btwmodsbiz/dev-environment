@@ -1,6 +1,15 @@
 #!/bin/bash
 
-. bin/common.sh
+# Standard script header.
+# ==========================================
+[ -z "$BASH_SOURCE" ] && echo "ERROR: This script cannot be run if piped to bash." && exit 1
+cd "$(dirname "$BASH_SOURCE" 2> /dev/null)" 2> /dev/null;
+[ $? -ne 0 ] && "ERROR: Failed to change to the working directory of: $BASH_SOURCE" && exit 1
+
+declare -r SCRIPTDIR="$(pwd)"
+. "$SCRIPTDIR/bin/common.sh";
+[ $? -ne 0 ] && echo "ERROR: Failed to include bin/common.sh" && exit 1
+# ==========================================
 
 function main() {
 	cd "$SCRIPTDIR"

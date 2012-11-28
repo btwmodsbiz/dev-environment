@@ -1,11 +1,21 @@
 #!/bin/bash
 
-. bin/common.sh
+# Standard script header.
+# ==========================================
+[ -z "$BASH_SOURCE" ] && echo "ERROR: This script cannot be run if piped to bash." && exit 1
+cd "$(dirname "$BASH_SOURCE" 2> /dev/null)" 2> /dev/null;
+[ $? -ne 0 ] && "ERROR: Failed to change to the working directory of: $BASH_SOURCE" && exit 1
+
+declare -r SCRIPTDIR="$(pwd)"
+. "$SCRIPTDIR/bin/common.sh";
+[ $? -ne 0 ] && echo "ERROR: Failed to include bin/common.sh" && exit 1
+# ==========================================
 
 function main() {
 	declare -r SYNTAX="Syntax: $0 <client|server|both>"
 	
 	# Argument defaults
+	local outdir="$SCRIPTDIR/$MCPJARS"
 	local doclient=false
 	local doserver=false
 	
@@ -45,6 +55,10 @@ function parse_arguments() {
 	# Optional arguments.
 	while [ $# -gt 0 ]; do
 		case "$1" in
+			"-d")
+				shift
+				outdir="$1"
+				;;
 			*)
 				SYNTAX "Unexpected argument: $1"
 				;;
@@ -54,27 +68,29 @@ function parse_arguments() {
 }
 
 function init_verify() {
-	if [ ! -d "$SCRIPTDIR/$MCPJARS" ]; then
+	if [ ! -d "$outdir" ]; then
 		echo
-		echo "MCP jars directory does not exist."
-		echo "You may need to install MCP to $SCRIPTDIR/$MCP"
+		echo "The jar output directory does not exist: $outdir"
 		EXITCLEAN 1
 	fi
 	
 	CHECKZIP
 	
 	if $doclient; then
-		CHECK_FILE "$MCCLIENT" "Minecraft client jar"
-		CHECK_DIR "$MCRESOURCES" "Minecraft resources directory"
-		CHECK_DIR "$BTWARCHIVE/MINECRAFT-JAR" "BTW client files"
-		CHECK_DIR "$MLARCHIVE" "ModLoader directory"
-		CHECK_FILE "$MLARCHIVE/ModLoader.class" "ModLoader ModLoader.class file"
+		CHECK_FILE_SAFE "$SCRIPTDIR/$MCCLIENT" "Minecraft client jar"
+		#CHECK_DIR_SAFE "$SCRIPTDIR/$MCRESOURCES" "Minecraft resources directory"
+		CHECK_DIR_SAFE "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT-JAR" "BTW client files"
+		CHECK_DIR_SAFE "$SCRIPTDIR/$MLARCHIVE" "ModLoader directory"
+		CHECK_FILE_SAFE "$SCRIPTDIR/$MLARCHIVE/ModLoader.class" "ModLoader ModLoader.class file"
 	fi
 	
 	if $doserver; then
-		CHECK_FILE "$MCSERVER" "Minecraft server jar"
-		CHECK_DIR "$BTWARCHIVE/MINECRAFT_SERVER-JAR" "BTW server files"
+		CHECK_FILE_SAFE "$SCRIPTDIR/" "$MCSERVER" "Minecraft server jar"
+		CHECK_DIR_SAFE "$SCRIPTDIR/" "$BTWARCHIVE/MINECRAFT_SERVER-JAR" "BTW server files"
 	fi
+	
+	
+	MKDIR_SAFE "$outdir/bin"
 	
 	MKCLEANTEMP "$SCRIPTDIR/temp/createjar"
 }
@@ -83,17 +99,17 @@ function init_verify() {
 function copy_fresh_files() {
 	if $doclient; then
 		echo "Copying fresh Minecraft client bin directory..."
-		cp -fR "$SCRIPTDIR/$MCBIN" "$SCRIPTDIR/$MCPJARS/" > /dev/null
+		cp -fR "$SCRIPTDIR/$MCBIN" "$outdir/" > /dev/null
 		[ $? -ne 0 ] && echo "ERROR: Failed to copy directory." && EXITCLEAN 1
 		
-		echo "Copying fresh Minecraft resources directory..."
-		cp -fR "$SCRIPTDIR/$MCRESOURCES" "$SCRIPTDIR/$MCPJARS/" > /dev/null
-		[ $? -ne 0 ] && echo "ERROR: Failed to copy directory." && EXITCLEAN 1
+		#echo "Copying fresh Minecraft resources directory..."
+		#cp -fR "$SCRIPTDIR/$MCRESOURCES" "$outdir/" > /dev/null
+		#[ $? -ne 0 ] && echo "ERROR: Failed to copy directory." && EXITCLEAN 1
 	fi
 	
 	if $doserver; then
 		echo "Copying fresh Minecraft server jar..."
-		cp -f "$SCRIPTDIR/$MCSERVER" "$SCRIPTDIR/$MCPJARS/" > /dev/null
+		cp -f "$SCRIPTDIR/$MCSERVER" "$outdir/" > /dev/null
 		[ $? -ne 0 ] && echo "ERROR: Failed to copy file." && EXITCLEAN 1
 	fi
 }
@@ -101,7 +117,8 @@ function copy_fresh_files() {
 # Copy mod into Minecraft.
 function copy_mod_files() {
 	if $doclient; then
-		local archive="$(FIXPATH "$SCRIPTDIR/$MCPJARS/bin" minecraft.jar)"
+		local archive="$outdir/bin/minecraft.jar"
+		#"$(FIXPATH "$outdir/bin" minecraft.jar)"
 	
 		local mlfiles="$(FIXPATH "$SCRIPTDIR/$MLARCHIVE" '*')"
 		echo "Adding ModLoader files to minecraft.jar..."
@@ -119,7 +136,7 @@ function copy_mod_files() {
 	fi
 	
 	if $doserver; then
-		local archive="$(FIXPATH "$SCRIPTDIR/$MCPJARS" minecraft_server.jar)"
+		local archive="$outdir/minecraft_server.jar"
 		local addedfiles="$(FIXPATH "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT_SERVER-JAR" '*')"
 		
 		echo "Adding BTW files to minecraft_server.jar..."
