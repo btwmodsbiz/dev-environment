@@ -23,13 +23,17 @@ function main() {
 	local checkdirty=false
 	local branch=
 	
-	parse_arguments
+	parse_arguments "$@"
 	
 	check_client_src_project || EXITCLEAN $?
 	check_server_src_project || EXITCLEAN $?
 	
 	mkdir "$TEMPDIR/jars"
 	[ $? -ne 0 ] && echo "Failed to create $TEMPDIR/jars" && EXITCLEAN 1
+	
+	if $doclient; then
+		cp -vr "$SCRIPTDIR/$MCBIN"/* "$TEMPDIR/jars"
+	fi
 	
 	if $doserver && $doclient; then
 		"$SCRIPTDIR/createjar.sh" both -d "$TEMPDIR/jars"
@@ -47,7 +51,7 @@ function main() {
 	if $doserver || $doclient; then
 		echo
 		cd "$SCRIPTDIR/$MCPARCHIVE"
-		"$PYCMD" "$decompilescript" -c "$cfgpath"
+		"$PYCMD" "$decompilescript" -r -c "$cfgpath"
 		ret=$?
 		[ $ret -ne 0 ] && echo "ERROR: decompile.py failed with exit: $ret" && exit 1
 	else
@@ -60,6 +64,14 @@ function parse_arguments() {
 	# Optional arguments.
 	while [ $# -gt 0 ]; do
 		case "$1" in
+			"client")
+				doclient=true
+				doserver=false
+				;;
+			"server")
+				doclient=false
+				doserver=true
+				;;
 			"-f")
 				shift
 				checkdirty=false

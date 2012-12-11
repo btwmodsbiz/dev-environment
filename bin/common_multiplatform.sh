@@ -138,6 +138,7 @@ function CHECKPYTHON() {
 function CHECKJAVAC() {
 	if [ -z "$JAVACCMD" ]; then
 		CHECKISWIN
+		$ISWIN && JAVAPATHSEP=";" || JAVAPATHSEP=":"
 		
 		if command -v javac &> /dev/null; then
 			JAVACCMD=javac
@@ -183,7 +184,7 @@ function ZIPADD() {
 		cmd.exe //c "$ZIPPATH" a -tzip "$(FIXPATH "$(dirname "$archive")" "$(basename "$archive")")" "$@"
 		return $?
 	else
-		zip "$archive" "$@"
+		zip -rv "$archive" "$@"
 		return $?
 	fi
 }

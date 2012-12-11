@@ -58,6 +58,7 @@ function parse_arguments() {
 			"-d")
 				shift
 				outdir="$1"
+				[ -d "$outdir" ] && outdir="$(cd "$outdir" 2> /dev/null && pwd)"
 				;;
 			*)
 				SYNTAX "Unexpected argument: $1"
@@ -116,37 +117,41 @@ function copy_fresh_files() {
 
 # Copy mod into Minecraft.
 function copy_mod_files() {
+	oldcd="$(pwd)"
+	
 	if $doclient; then
 		local archive="$outdir/bin/minecraft.jar"
 		#"$(FIXPATH "$outdir/bin" minecraft.jar)"
 	
-		local mlfiles="$(FIXPATH "$SCRIPTDIR/$MLARCHIVE" '*')"
 		echo "Adding ModLoader files to minecraft.jar..."
-		ZIPADD "$archive" "$mlfiles" &> "$TEMPDIR/adding-modloader.out"
+		cd "$SCRIPTDIR/$MLARCHIVE"
+		ZIPADD "$archive" . &> "$TEMPDIR/adding-modloader.out"
 		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-modloader.out"
 	
-		local btwfiles="$(FIXPATH "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT-JAR" '*')"
 		echo "Adding BTW files to minecraft.jar..."
-		ZIPADD "$archive" "$btwfiles" &> "$TEMPDIR/adding-btw-client.out"
+		cd "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT-JAR"
+		ZIPADD "$archive" . &> "$TEMPDIR/adding-btw-client.out"
 		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-btw-client.out"
 	
 		echo "Removing META-INF from minecraft.jar..."
-		ZIPDEL "$archive" "META-INF" &> "$TEMPDIR/removing-metainf-client.out"
+		ZIPDEL "$archive" "META-INF/*" &> "$TEMPDIR/removing-metainf-client.out"
 		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/removing-metainf-client.out"
 	fi
 	
 	if $doserver; then
 		local archive="$outdir/minecraft_server.jar"
-		local addedfiles="$(FIXPATH "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT_SERVER-JAR" '*')"
 		
 		echo "Adding BTW files to minecraft_server.jar..."
-		ZIPADD "$archive" "$addedfiles" &> "$TEMPDIR/adding-btw-client.out"
+		cd "$SCRIPTDIR/$BTWARCHIVE/MINECRAFT_SERVER-JAR"
+		ZIPADD "$archive" . &> "$TEMPDIR/adding-btw-client.out"
 		[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/adding-btw-client.out"
 	
 		#echo "Removing META-INF from minecraft_server.jar..."
 		#ZIPDEL "$archive" "META-INF" &> "$TEMPDIR/removing-metainf-server.out"
 		#[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/removing-metainf-server.out"
 	fi
+	
+	cd "$oldcd"
 }
 
 main "$@"

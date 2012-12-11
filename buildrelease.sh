@@ -20,6 +20,9 @@ function main() {
 	local doclient=false
 	local doserver=false
 	
+	# Whether or not to use the working copy of the repo.
+	local useworkingdir=false
+	
 	# Default Git branches
 	local clientsrc=master
 	local clientapi=master
@@ -119,8 +122,8 @@ function extract_dependencies() {
 					classpath="$(FIXPATH "$SCRIPTDIR/" "$1")"
 					
 					[ "$side" == "client" ] \
-						&& clientclasspath="$clientclasspath;$classpath" \
-						|| serverclasspath="$serverclasspath;$classpath"
+						&& clientclasspath="$clientclasspath$JAVAPATHSEP$classpath" \
+						|| serverclasspath="$serverclasspath$JAVAPATHSEP$classpath"
 					
 					ZIPEXTRACT_SAFE "$SCRIPTDIR/" "$1" "$($nojava && echo "$TEMPDIR/temp-nojava" || echo "$bindir")"
 				fi
@@ -161,9 +164,22 @@ function collect_sources() {
 	local side="$1"
 	
 	if [ "$side" == "server" ]; then
-		EXPORT_BRANCH_SAFE "$serversrc" "$SCRIPTDIR/" "$SERVER_SRC_PROJECT" "$TEMPDIR/server-src"
-		EXPORT_BRANCH_SAFE "$serverapi" "$SCRIPTDIR/" "$SERVER_API_PROJECT" "$TEMPDIR/server-src"
-		EXPORT_BRANCH_SAFE "$servermods" "$SCRIPTDIR/" "$SERVER_MODS_PROJECT" "$TEMPDIR/server-src"
+		if $useworkingdir; then
+			MKDIR_SAFE "$TEMPDIR/server-src/src"
+			
+			echo "Copying server-src sources from working dir..."
+			cp -r "$SERVER_SRC_PROJECT/src"/* "$TEMPDIR/server-src/src" &> "$TEMPDIR/cp.out" || FAIL_CAT "$TEMPDIR/cp.out"
+			
+			echo "Copying server-api sources from working dir..."
+			cp -r "$SERVER_API_PROJECT/src"/* "$TEMPDIR/server-src/src" &> "$TEMPDIR/cp.out" || FAIL_CAT "$TEMPDIR/cp.out"
+			
+			echo "Copying server-mods sources from working dir..."
+			cp -r "$SERVER_MODS_PROJECT/src"/* "$TEMPDIR/server-src/src" &> "$TEMPDIR/cp.out" || FAIL_CAT "$TEMPDIR/cp.out"
+		else
+			EXPORT_BRANCH_SAFE "$serversrc" "$SCRIPTDIR/" "$SERVER_SRC_PROJECT" "$TEMPDIR/server-src"
+			EXPORT_BRANCH_SAFE "$serverapi" "$SCRIPTDIR/" "$SERVER_API_PROJECT" "$TEMPDIR/server-src"
+			EXPORT_BRANCH_SAFE "$servermods" "$SCRIPTDIR/" "$SERVER_MODS_PROJECT" "$TEMPDIR/server-src"
+		fi
 	fi
 }
 
@@ -271,6 +287,9 @@ function parse_arguments() {
 	# Optional arguments.
 	while [ $# -gt 0 ]; do
 		case "$1" in
+			-w)
+				useworkingdir=true
+				;;
 			-d|--builddir)
 				[ "$2" == "" ] && SYNTAX "Missing argument after $1"
 				builddir="$2"

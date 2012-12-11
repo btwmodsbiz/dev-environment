@@ -40,6 +40,7 @@ function main() {
 				echo "    FAILED. See $TEMPDIR/clone.log"
 				hasfailed=true
 			else
+				echo "Checking out tree $sha for $path..."
 				(cd "$path" > /dev/null 2>> "$TEMPDIR/clone.log" && git checkout "$sha" >> "$TEMPDIR/clone.log" 2>&1 )
 				if [ $? -ne 0 ]; then
 					echo "    FAILED. See $TEMPDIR/clone.log"
