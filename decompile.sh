@@ -32,7 +32,7 @@ function main() {
 	[ $? -ne 0 ] && echo "Failed to create $TEMPDIR/jars" && EXITCLEAN 1
 	
 	if $doclient; then
-		cp -vr "$SCRIPTDIR/$MCBIN"/* "$TEMPDIR/jars"
+		cp -r "$SCRIPTDIR/$MCBIN"/* "$TEMPDIR/jars"
 	fi
 	
 	if $doserver && $doclient; then
@@ -86,7 +86,7 @@ function parse_arguments() {
 
 check_client_src_project() {
 	branch="$(cd "$SCRIPTDIR/$CLIENT_SRC_PROJECT" 2> /dev/null && git symbolic-ref -q HEAD 2> /dev/null)"
-	if [ "$branch" != "refs/heads/$CLIENT_SRC_DECOMPILEBRANCH" ]; then
+	if $doclient && [ "$branch" != "refs/heads/$CLIENT_SRC_DECOMPILEBRANCH" ]; then
 		if [ "$branch" == "" ]; then
 			echo "SKIPPING CLIENT: Either $CLIENT_SRC_PROJECT is not a git repo or it is not on the refs/heads/$CLIENT_SRC_DECOMPILEBRANCH branch."
 		else
@@ -114,7 +114,7 @@ check_client_src_project() {
 
 check_server_src_project() {
 	branch="$(cd "$SCRIPTDIR/$SERVER_SRC_PROJECT" 2> /dev/null && git symbolic-ref -q HEAD 2> /dev/null)"
-	if [ "$branch" != "refs/heads/$SERVER_SRC_DECOMPILEBRANCH" ]; then
+	if $doserver && [ "$branch" != "refs/heads/$SERVER_SRC_DECOMPILEBRANCH" ]; then
 		if [ "$branch" == "" ]; then
 			echo "SKIPPING SERVER: Either $SERVER_SRC_PROJECT is not a git repo or it is not on the refs/heads/$SERVER_SRC_DECOMPILEBRANCH branch."
 		else

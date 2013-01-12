@@ -34,6 +34,9 @@ function main() {
 	local clientclasspath='.'
 	local serverclasspath='.'
 	
+	# javac args for debugging info
+	local debugargs="-g:source,lines,vars"
+	
 	parse_arguments "$@"
 	init_verify
 	
@@ -207,7 +210,7 @@ function compile() {
 	[ $? -ne 0 ] && FAIL_CAT "$TEMPDIR/findjava.out"
 	
 	echo "Compiling..."
-	"$JAVACCMD" -classpath "$classpath" -target 1.6 @"$(FIXPATH "$TEMPDIR" javasrcdirs.txt)" -d "$bindir"
+	"$JAVACCMD" $debugargs -classpath "$classpath" -target 1.6 @"$(FIXPATH "$TEMPDIR" javasrcdirs.txt)" -d "$bindir"
 	
 	cd "$SCRIPTDIR"
 }
@@ -295,7 +298,7 @@ function parse_arguments() {
 				builddir="$2"
 				shift
 				;;
-			--treeish)
+			--treeish|--tree|--tag|--branch)
 				[ "$2" == "" ] && SYNTAX "Missing argument after $1"
 				clientsrc="$2"
 				clientapi="$2"
@@ -323,6 +326,9 @@ function parse_arguments() {
 				[ "$2" == "" ] && SYNTAX "Missing argument after $1"
 				serverapi="$2"
 				shift
+				;;
+			--nodebug)
+				debugargs=""
 				;;
 			*)
 				SYNTAX "Unexpected argument: $1"
