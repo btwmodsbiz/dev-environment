@@ -1,0 +1,15 @@
+#!/bin/bash
+
+[ -z "$BASH_SOURCE" ] && echo "ERROR: This script cannot be run if piped to bash." && exit 1
+cd "$(dirname "$BASH_SOURCE" 2> /dev/null)" 2> /dev/null;
+[ $? -ne 0 ] && "ERROR: Failed to change to the working directory of: $BASH_SOURCE" && exit 1
+declare -r SCRIPTDIR="$(pwd)"
+
+cd "$SCRIPTDIR/workspace/workingdir"
+[ $? -ne 0 ] && echo "FAILED: Could not change directory to: workspace/workingdir" && exit 1
+
+java -Xincgc -Xmx512M \
+	-Djava.library.path=../../archives/mojang/bin/natives \
+	-Dfile.encoding=Cp1252 \
+	-classpath ../../workspace/client-src/bin:../../archives/mojang/bin/jinput.jar:../../archives/mojang/bin/lwjgl_util.jar:../../archives/mojang/bin/lwjgl.jar:../../archives/mojang/bin/minecraft.jar:../../archives/btw/MINECRAFT-JAR \
+	Start
