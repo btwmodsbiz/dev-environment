@@ -72,7 +72,7 @@ function parse_arguments() {
 				doclient=false
 				doserver=true
 				;;
-			"-f")
+			"-f"|"--force")
 				shift
 				checkdirty=false
 				;;
@@ -105,7 +105,7 @@ check_client_src_project() {
 		fi
 		
 		echo "Removing $CLIENT_SRC_PROJECT/src..."
-		rm -rf "$SCRIPTDIR/$CLIENT_SRC_PROJECT/src"
+		rm -rf "$SCRIPTDIR/$CLIENT_SRC_PROJECT/src/"*
 		[ $? -ne 0 ] && echo "ERROR: Could not remove old src directory." && return 1
 	fi
 	
@@ -133,7 +133,7 @@ check_server_src_project() {
 		fi
 		
 		echo "Removing $SERVER_SRC_PROJECT/src..."
-		rm -rf "$SCRIPTDIR/$SERVER_SRC_PROJECT/src"
+		rm -rf "$SCRIPTDIR/$SERVER_SRC_PROJECT/src/"*
 		[ $? -ne 0 ] && echo "ERROR: Could not remove old src directory." && return 1
 	fi
 	

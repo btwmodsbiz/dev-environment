@@ -322,6 +322,11 @@ function parse_arguments() {
 				serversrc="$2"
 				shift
 				;;
+			-sm|--servermods)
+				[ "$2" == "" ] && SYNTAX "Missing argument after $1"
+				servermods="$2"
+				shift
+				;;
 			-sa|--serverapi)
 				[ "$2" == "" ] && SYNTAX "Missing argument after $1"
 				serverapi="$2"
